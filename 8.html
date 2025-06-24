@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Альбомы с .mp3 — Archive.org</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    input, button {
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .album {
+      background: #222;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+    .album:hover {
+      background: #333;
+    }
+    .track {
+      padding: 5px 10px;
+      margin: 5px 0;
+      background: #1a1a1a;
+      cursor: pointer;
+    }
+    .track:hover {
+      background: #2a2a2a;
+    }
+    img {
+      max-width: 100%;
+      max-height: 250px;
+      margin: 10px 0;
+      display: block;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 0 20px #000;
+    }
+    .modal h2 {
+      margin-top: 0;
+    }
+    .close-btn, .nav-btn {
+      margin-top: 10px;
+      padding: 8px 20px;
+      background: #444;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .close-btn:hover, .nav-btn:hover {
+      background: #666;
+    }
+    .download-link {
+      color: #4dd;
+      display: block;
+      margin-top: 10px;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>📀 Альбомы с .mp3 из Internet Archive</h1>
+  <input type="text" id="genre" placeholder="Введите жанр (например: italo disco)">
+  <button onclick="searchAlbums()">🔍 Найти альбомы</button>
+  <div id="albums"></div>
+
+  <!-- Модальное окно -->
+  <div id="modal" class="modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h2 id="modal-title">Название трека</h2>
+      <audio id="modal-player" controls style="width: 100%; margin: 15px 0;"></audio>
+      <a id="modal-download" class="download-link" target="_blank">⬇ Скачать</a><br>
+      <button class="nav-btn" onclick="prevTrack()">⏮ Предыдущий</button>
+      <button class="nav-btn" onclick="nextTrack()">⏭ Следующий</button>
+      <button class="nav-btn" onclick="shareTrack()">🔗 Поделиться</button>
+      <button class="close-btn" onclick="closeModal()">Закрыть</button>
+      <p id="share-status" style="margin-top: 10px; color: #4dd;"></p>
+    </div>
+  </div>
+
+  <script>
+    let currentAlbum = [];
+    let currentIndex = 0;
+
+    async function searchAlbums() {
+      const genre = document.getElementById('genre').value.trim();
+      if (!genre) return alert('Введите жанр!');
+      const container = document.getElementById('albums');
+      container.innerHTML = '🔄 Поиск альбомов...';
+
+      const url = `https://archive.org/advancedsearch.php?q=subject:${encodeURIComponent(genre)}+AND+mediatype:audio&fl[]=identifier,title,creator,description&rows=20&sort[]=downloads+desc&output=json`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      const albums = data.response.docs;
+      container.innerHTML = '';
+
+      if (albums.length === 0) {
+        container.innerHTML = '❌ Альбомы не найдены.';
+        return;
+      }
+
+      for (const album of albums) {
+        const div = document.createElement('div');
+        div.className = 'album';
+        div.innerHTML = `
+          <b>${album.title || album.identifier}</b><br>
+          👤 ${album.creator || 'Неизвестный автор'}<br>
+          📝 ${album.description ? album.description.slice(0, 200) + '...' : 'Нет описания'}<br>
+          🔽 Нажмите, чтобы раскрыть треки...
+        `;
+        div.onclick = () => loadAlbumTracks(album.identifier, div);
+        container.appendChild(div);
+      }
+    }
+
+    async function loadAlbumTracks(identifier, container) {
+      const res = await fetch(`https://archive.org/metadata/${identifier}`);
+      const data = await res.json();
+      const files = data.files;
+
+      const mp3Files = files.filter(f => f.name.toLowerCase().endsWith('.mp3'));
+      const imageFile = files.find(f => f.name.toLowerCase().endsWith('.jpg') || f.name.toLowerCase().endsWith('.jpeg'));
+      const base = `https://archive.org/download/${identifier}/`;
+
+      let html = '<div style="margin-top:10px;">';
+      if (imageFile) {
+        html += `<img src="${base + imageFile.name}" alt="Обложка">`;
+      }
+
+      if (mp3Files.length === 0) {
+        html += '❌ Нет mp3 файлов.';
+      } else {
+        html += '<div>🎵 Треки:</div>';
+        currentAlbum = mp3Files.map(f => ({ name: f.name, url: base + f.name }));
+        mp3Files.forEach((file, i) => {
+          html += `<div class="track" onclick="openModal(${i})">${file.name}</div>`;
+        });
+      }
+
+      html += '</div>';
+      container.innerHTML += html;
+      container.onclick = null;
+    }
+
+    function openModal(index) {
+      currentIndex = index;
+      const track = currentAlbum[index];
+      const player = document.getElementById('modal-player');
+
+      document.getElementById('modal-title').textContent = track.name;
+      player.src = track.url;
+      player.play();
+
+      document.getElementById('modal-download').href = track.url;
+      document.getElementById('modal-download').download = track.name;
+      document.getElementById('modal').style.display = 'flex';
+
+      player.onended = () => {
+        if (currentIndex < currentAlbum.length - 1) {
+          nextTrack();
+        }
+      };
+    }
+
+    function prevTrack() {
+      if (currentAlbum.length === 0) return;
+      currentIndex = (currentIndex - 1 + currentAlbum.length) % currentAlbum.length;
+      openModal(currentIndex);
+    }
+
+    function nextTrack() {
+      if (currentAlbum.length === 0) return;
+      currentIndex = (currentIndex + 1) % currentAlbum.length;
+      openModal(currentIndex);
+    }
+
+    function closeModal(event) {
+      document.getElementById('modal-player').pause();
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    function shareTrack() {
+      const track = currentAlbum[currentIndex];
+      const url = new URL(window.location.href);
+      url.searchParams.set('album', track.url.split('/')[4]);
+      url.searchParams.set('track', track.name);
+
+      navigator.clipboard.writeText(url.toString())
+        .then(() => {
+          document.getElementById('share-status').textContent = '✅ Ссылка скопирована!';
+          setTimeout(() => {
+            document.getElementById('share-status').textContent = '';
+          }, 3000);
+        })
+        .catch(() => {
+          document.getElementById('share-status').textContent = '❌ Не удалось скопировать.';
+        });
+    }
+
+    // Автооткрытие трека из URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const album = params.get('album');
+      const trackName = params.get('track');
+
+      if (album && trackName) {
+        fetch(`https://archive.org/metadata/${album}`)
+          .then(res => res.json())
+          .then(data => {
+            const base = `https://archive.org/download/${album}/`;
+            const mp3Files = data.files.filter(f => f.name.toLowerCase().endsWith('.mp3'));
+            currentAlbum = mp3Files.map(f => ({ name: f.name, url: base + f.name }));
+            const index = currentAlbum.findIndex(f => f.name === trackName);
+            if (index !== -1) {
+              openModal(index);
+            } else {
+              alert("🎵 Трек не найден в альбоме.");
+            }
+          });
+      }
+    });
+  </script>
+</body>
+</html>
