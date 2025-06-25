@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Internet Audio Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Internet Audio Player</h1>
+  <p>Работает с API Archive.org</p>
+  <input type="text" id="genre" placeholder="Введите жанр (например: italo disco)">
+  <button onclick="searchAlbums()">🔍 Найти альбомы</button>
+  <div id="albums"></div>
+
+  <!-- Модальное окно -->
+  <div id="modal" class="modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h2 id="modal-title">Название трека</h2>
+      <audio id="modal-player" controls style="width: 100%; margin: 15px 0;"></audio>
+      <a id="modal-download" class="download-link" target="_blank">⬇ Скачать</a><br>
+      <button class="nav-btn" onclick="prevTrack()">⏮ Предыдущий</button>
+      <button class="nav-btn" onclick="nextTrack()">⏭ Следующий</button>
+      <button class="nav-btn" onclick="shareTrack()">🔗 Поделиться</button>
+      <button class="close-btn" onclick="closeModal()">Закрыть</button>
+      <p id="share-status" style="margin-top: 10px; color: #4dd;"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

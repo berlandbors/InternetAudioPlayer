@@ -1,0 +1,87 @@
+body {
+  font-family: sans-serif;
+  background: #111;
+  color: #eee;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+}
+
+input, button {
+  padding: 10px;
+  margin-top: 5px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.album {
+  background: #222;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+.album:hover {
+  background: #333;
+}
+
+.track {
+  padding: 5px 10px;
+  margin: 5px 0;
+  background: #1a1a1a;
+  cursor: pointer;
+}
+.track:hover {
+  background: #2a2a2a;
+}
+
+img {
+  max-width: 100%;
+  max-height: 250px;
+  margin: 10px 0;
+  display: block;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #222;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 20px #000;
+}
+.modal h2 {
+  margin-top: 0;
+}
+
+.close-btn, .nav-btn {
+  margin-top: 10px;
+  padding: 8px 20px;
+  background: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-right: 5px;
+}
+.close-btn:hover, .nav-btn:hover {
+  background: #666;
+}
+
+.download-link {
+  color: #4dd;
+  display: block;
+  margin-top: 10px;
+  text-decoration: underline;
+}
