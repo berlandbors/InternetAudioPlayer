@@ -22,44 +22,73 @@ async function searchAlbums() {
   for (const album of albums) {
     const div = document.createElement('div');
     div.className = 'album';
+    div.setAttribute('data-open', 'false');
     div.innerHTML = `
       <b>${album.title || album.identifier}</b><br>
       👤 ${album.creator || 'Неизвестный автор'}<br>
       📝 ${album.description ? album.description.slice(0, 200) + '...' : 'Нет описания'}<br>
-      🔽 Нажмите, чтобы раскрыть треки...
+      🔽 Нажмите, чтобы раскрыть/свернуть треки...
     `;
-    div.onclick = () => loadAlbumTracks(album.identifier, div);
+    div.onclick = () => toggleAlbum(album.identifier, div);
     container.appendChild(div);
   }
 }
 
-async function loadAlbumTracks(identifier, container) {
+async function toggleAlbum(identifier, container) {
+  const isOpen = container.getAttribute('data-open') === 'true';
+
+  // Закрываем все другие
+  document.querySelectorAll('.album[data-open="true"]').forEach(el => {
+    el.querySelector('.tracklist')?.remove();
+    el.setAttribute('data-open', 'false');
+  });
+
+  if (isOpen) {
+    // просто закрыть
+    container.querySelector('.tracklist')?.remove();
+    container.setAttribute('data-open', 'false');
+    return;
+  }
+
+  // Загружаем и раскрываем альбом
   const res = await fetch(`https://archive.org/metadata/${identifier}`);
   const data = await res.json();
   const files = data.files;
 
   const mp3Files = files.filter(f => f.name.toLowerCase().endsWith('.mp3'));
-  const imageFile = files.find(f => f.name.toLowerCase().endsWith('.jpg') || f.name.toLowerCase().endsWith('.jpeg'));
+  const imageFile = files.find(f => /\.(jpg|jpeg|png)$/i.test(f.name));
   const base = `https://archive.org/download/${identifier}/`;
 
-  let html = '<div style="margin-top:10px;">';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tracklist';
+  wrapper.style.marginTop = '10px';
+
   if (imageFile) {
-    html += `<img src="${base + imageFile.name}" alt="Обложка">`;
+    const img = document.createElement('img');
+    img.src = base + imageFile.name;
+    img.alt = 'Обложка';
+    img.style.maxHeight = '250px';
+    img.style.display = 'block';
+    img.style.margin = '10px auto';
+    wrapper.appendChild(img);
   }
 
   if (mp3Files.length === 0) {
-    html += '❌ Нет mp3 файлов.';
+    wrapper.innerHTML += '❌ Нет mp3 файлов.';
   } else {
-    html += '<div>🎵 Треки:</div>';
+    wrapper.innerHTML += '<div>🎵 Треки:</div>';
     currentAlbum = mp3Files.map(f => ({ name: f.name, url: base + f.name }));
     mp3Files.forEach((file, i) => {
-      html += `<div class="track" onclick="openModal(${i})">${file.name}</div>`;
+      const div = document.createElement('div');
+      div.className = 'track';
+      div.textContent = file.name;
+      div.onclick = () => openModal(i);
+      wrapper.appendChild(div);
     });
   }
 
-  html += '</div>';
-  container.innerHTML += html;
-  container.onclick = null;
+  container.appendChild(wrapper);
+  container.setAttribute('data-open', 'true');
 }
 
 function openModal(index) {
@@ -117,7 +146,6 @@ function shareTrack() {
     });
 }
 
-// автооткрытие по ссылке
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const album = params.get('album');
