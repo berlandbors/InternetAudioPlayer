@@ -7,7 +7,7 @@ async function searchAlbums() {
   const container = document.getElementById('albums');
   container.innerHTML = '🔄 Поиск альбомов...';
 
-  const url = `https://archive.org/advancedsearch.php?q=subject:${encodeURIComponent(genre)}+AND+mediatype:audio&fl[]=identifier,title,creator,description&rows=20&sort[]=downloads+desc&output=json`;
+  const url = `https://archive.org/advancedsearch.php?q=subject:${encodeURIComponent(genre)}+AND+mediatype:audio&fl[]=identifier,title,creator,description&rows=200&sort[]=downloads+desc&output=json`;
 
   const res = await fetch(url);
   const data = await res.json();
