@@ -91,11 +91,16 @@ img {
   box-sizing: border-box;
 }
 
-.modal-content video,
-.modal-content audio {
+.modal-content video {
   width: 100%;
   height: auto;
   max-height: 60vh;
+}
+
+.modal-content audio {
+  width: 100%;
+  height: 40px;
+  margin: 15px 0;
 }
 
 
