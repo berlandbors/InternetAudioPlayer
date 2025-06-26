@@ -185,3 +185,35 @@ function toggleFavorite(identifier, btn) {
   }
   localStorage.setItem('favorites', JSON.stringify([...favorites]));
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const album = params.get('album');
+  const track = params.get('track');
+  const genre = params.get('genre');
+
+  if (album && !document.getElementById('albums').children.length) {
+    // Сохраняем жанр в поле ввода, если указан
+    if (genre) document.getElementById('genre').value = genre;
+    else document.getElementById('genre').value = 'techno'; // или любой жанр по умолчанию
+
+    // Запускаем поиск, затем открываем альбом
+    searchAlbums().then(() => {
+      const el = document.querySelector(`.album[data-id="${album}"]`);
+      if (el) toggleAlbum(album, el);
+
+      if (track) {
+        // Найдём и откроем трек
+        fetch(`https://archive.org/metadata/${album}`)
+          .then(res => res.json())
+          .then(data => {
+            const base = `https://archive.org/download/${album}/`;
+            const mp3Files = data.files.filter(f => f.name.toLowerCase().endsWith('.mp3'));
+            currentAlbum = mp3Files.map(f => ({ name: f.name, url: base + f.name }));
+            const index = currentAlbum.findIndex(f => f.name === track);
+            if (index !== -1) openModal(index);
+          });
+      }
+    });
+  }
+});
